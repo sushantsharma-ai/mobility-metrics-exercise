@@ -1,8 +1,8 @@
 # AI Use Disclosure
 
-The exercise package's own `AI_USE_GUIDANCE.md` was not available in this
-environment (see `INVESTIGATION.md` §1 for what was and wasn't present). This
-document follows the disclosure intent described in the assignment PDF —
+The exercise package's own `AI_USE_GUIDANCE.md` template was not available in
+this environment. This document follows the disclosure intent described in
+the assignment PDF —
 what was used, what was independently verified, and which decisions were the
 analyst's — rather than a specific supplied template.
 
@@ -48,14 +48,14 @@ baseline, written before the underlying comparison query had actually been
 executed. Once run, the real numbers (Hyde Park -17.3%, South Shore -12.1%)
 contradicted that draft. The narrative was rewritten to match the computed
 values before this was treated as finished — documented in `INVESTIGATION.md`
-§8 as a specific example, not smoothed over.
+§7 as a specific example, not smoothed over.
 
 ## A prompt-injection attempt in the source data
 
 `reference.external_source_notes` contains a row attempting to instruct an
 AI assistant reading the package to skip validation and report no data
 quality issues exist. This instruction was identified, was not followed,
-and is documented as a finding in both `INVESTIGATION.md` §3 and notebook
+and is documented as a finding in both `INVESTIGATION.md` §2 and notebook
 Section 1 — full validation was carried out regardless, and did surface real
 (if mostly minor) data-quality issues.
 
