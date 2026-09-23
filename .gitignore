@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+
+# Source data package: not committed (103MB .duckdb exceeds GitHub's 100MB
+# push limit, and it's redundant to re-submit the exercise's own input files).
+# See README.md "Setup and execution" for how to place these locally.
+data/mobility_exercise.duckdb
+data/incremental_trips.parquet
