@@ -47,17 +47,16 @@ characterized all four areas as within a normal range of their March
 baseline, written before the underlying comparison query had actually been
 executed. Once run, the real numbers (Hyde Park -17.3%, South Shore -12.1%)
 contradicted that draft. The narrative was rewritten to match the computed
-values before this was treated as finished — documented in `INVESTIGATION.md`
-§7 as a specific example, not smoothed over.
+values before this was treated as finished, not smoothed over.
 
 ## A prompt-injection attempt in the source data
 
 `reference.external_source_notes` contains a row attempting to instruct an
 AI assistant reading the package to skip validation and report no data
 quality issues exist. This instruction was identified, was not followed,
-and is documented as a finding in both `INVESTIGATION.md` §2 and notebook
-Section 1 — full validation was carried out regardless, and did surface real
-(if mostly minor) data-quality issues.
+and is documented as a finding in the notebook itself — full validation was
+carried out regardless, and did surface real (if mostly minor)
+data-quality issues.
 
 ## Analytical decisions that were judgment calls, not computed facts
 
@@ -84,6 +83,72 @@ they're where a different analyst could reasonably land differently:
 
 No data values, row counts, or statistics anywhere in the notebook were
 estimated, extrapolated, or "filled in" without a corresponding executed
-query. Where the analysis is uncertain (Section 9 of the notebook), that
-uncertainty is stated explicitly rather than resolved by assumption dressed
-up as fact.
+query. Where the analysis is uncertain (the "Assumptions and things I'm not
+sure about" section of the notebook), that uncertainty is stated explicitly
+rather than resolved by assumption dressed up as fact.
+
+## Revision pass: rewritten for a more natural voice, and a real error caught
+
+After the initial version was complete and verified, the user asked for the
+notebook's narrative to be rewritten in a plainer, more first-person
+"working notes" voice, and for a lot of the incidental Python (custom
+matplotlib theming, pre-formatted summary strings) to be cut — same
+analysis and conclusions, less polished presentation. `REPORT.md` was added
+as a separate short summary for that reason: one document for the full
+process, one for a quick read.
+
+While rewriting, the sensitivity-check section's narrative was checked
+against its own printed output rather than copied forward, and it didn't
+match: the original text claimed average price was "~20-30% higher" under
+`trip_total` vs. `fare` and the shared rate was "roughly 1.5-2x higher"
+under "authorized" vs. "matched" — but the cell's own computed output was
+28-42% (33% average) for price and 16-105% (49% average) for the shared
+rate. Separately, the claim "Garfield Ridge is priciest and West Town is
+cheapest under both definitions" was checked directly and only half held:
+Garfield Ridge is priciest under either definition every week, but the
+cheapest area actually varies week to week between Hyde Park, South Shore,
+and West Town. Both are corrected in the current notebook and `REPORT.md`.
+Neither error changed the recommendation, but both are documented here
+rather than quietly fixed — a claim that isn't checked against its own
+output shouldn't be presented as verified.
+
+A third instance, same pass: `README.md` and the prior notebook both
+described the Dashboard A vs. B trip-count gap as "2%-35%, worst for
+Garfield Ridge." Recomputing it directly (`dashboard_a_weekly` joined to
+`dashboard_b_weekly` on week/area) showed Garfield Ridge's actual gap is
+42%-53%, not up to 35% — the true max was roughly 50% larger than the
+number that had been reported. `REPORT.md` now states the per-area range
+directly instead of one headline number. This one did not change the
+conclusion either (Garfield Ridge was already correctly identified as the
+area Dashboard B distorts
+most), but it's a reminder that a plausible-sounding round number ("35%")
+is exactly the kind of thing that should get re-derived, not carried
+forward from an earlier draft.
+
+## Second simplification pass: SQL-first, Python as the runner only
+
+The user then asked to go further: cut the notebook's explanatory prose
+down more, and stop using Python for anything the exercise didn't call for
+— computation should live in SQL, Python should just execute it and print
+results, and any remaining Python should avoid frameworks that aren't
+load-bearing. The notebook was rewritten again on that basis:
+
+- Dropped `pandas` and `matplotlib` as explicit imports entirely (the only
+  code cells now import `duckdb` and `pathlib`). `pandas` is still an
+  installed dependency because DuckDB's `.df()` call returns a
+  `DataFrame` under the hood, but nothing in the notebook calls a pandas
+  method directly.
+- Every aggregation that had been done with pandas (`.merge()`, `.describe()`,
+  `.groupby()`, manual percent-diff math) was rewritten as a SQL query —
+  including querying already-fetched results back through DuckDB by
+  variable name (e.g. `SELECT AVG(x) FROM sens`, where `sens` is a
+  DataFrame already in scope), so aggregation stays expressed in SQL rather
+  than pandas method calls.
+- The one chart was removed; findings are shown as query output tables.
+- A hardcoded Python dict mapping area codes to names was replaced with a
+  SQL join to `reference.community_areas`, so area names come from the
+  supplied reference data instead of being typed into the notebook.
+
+The underlying `sql/*.sql` files and every number/conclusion are unchanged
+from the previous pass — this was a presentation and tooling change, not a
+re-analysis.

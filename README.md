@@ -5,15 +5,18 @@ disagree, canonical trusted metric definitions, and what happened in the
 latest period (incorporating the incremental delivery), for four Chicago
 community areas (West Town, Hyde Park, South Shore, Garfield Ridge).
 
-**Start here:** [`notebooks/analysis_report.html`](notebooks/analysis_report.html)
-— the rendered final artifact (open directly in a browser, no setup
-required). The executable source is `notebooks/analysis.ipynb`.
+**Start here:** [`REPORT.md`](REPORT.md) — the short version, for anyone
+who just wants the findings and recommendation. For the full working
+process (every query, what it returned, why the next step followed from
+it), see [`notebooks/analysis_report.html`](notebooks/analysis_report.html)
+(rendered, open directly in a browser) or `notebooks/analysis.ipynb`
+(executable source).
 
 ## Repo layout
 
 ```
+REPORT.md                   Short, stakeholder-facing report: findings, definitions, recommendation
 DATA_DICTIONARY.md          Source schema/scope/limitations (supplied by the exercise)
-INVESTIGATION.md            Narrative log of the initial inspection/investigation process
 AI_USE_DISCLOSURE.md        AI-use transparency notes
 data/                       Copies of the supplied .duckdb and .parquet files (untouched; read-only)
 sql/                        All SQL, as standalone reusable/re-runnable files
@@ -26,10 +29,9 @@ sql/                        All SQL, as standalone reusable/re-runnable files
   06_sensitivity_check.sql     Alternative-definition sensitivity check
   07_validation_tests.sql      Reproducible pass/fail validation queries
 notebooks/
-  analysis.ipynb               Executable notebook — the analysis, run top to bottom
+  analysis.ipynb               Executable notebook — the investigation, run top to bottom
   analysis_report.html         Rendered, static version of the same notebook
   build_notebook.py            Generates analysis.ipynb from source (for editing/regenerating)
-  fig_*.png                    Chart exports embedded in the notebook/report
 ```
 
 ## Setup and execution
@@ -39,7 +41,7 @@ Requires Python 3.10+.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install duckdb pandas pyarrow jupyter nbformat nbclient nbconvert matplotlib ipykernel
+pip install duckdb pandas pyarrow jupyter nbformat nbclient nbconvert ipykernel
 python -m ipykernel install --user --name mobility-exercise --display-name "mobility-exercise"
 ```
 
@@ -88,22 +90,23 @@ print(con.execute(pathlib.Path('sql/03_data_quality.sql').read_text().split(';')
 
 ## What's in the analysis
 
-1. **Why the two dashboards disagree** — three compounding, undocumented
-   definition differences (trip scope, price basis, shared-trip definition),
-   reverse-engineered by recomputing candidate formulas and diffing against
+1. **Why the two dashboards disagree** — three undocumented definition
+   differences (trip scope, price basis, shared-trip definition), found by
+   recomputing candidate formulas from the raw trips and diffing against
    the supplied tables.
 2. **Canonical trusted definitions** for trip volume, average trip price,
    and shared-trip rate, with rationale.
-3. **Data-quality findings**, ranked by materiality.
-4. **Incremental delivery handling** — dedup logic, validated as lossless
-   for this delivery, with the underlying assumption flagged for the future.
+3. **Data-quality findings**, focused on what's actually material.
+4. **Incremental delivery handling** — dedup logic, checked (not assumed)
+   to be lossless for this delivery.
 5. **Latest-period findings** vs. an appropriately-chosen historical
-   baseline, including an explicit temporal-leakage analysis of the
-   `historical_baseline` table.
+   baseline — including catching that the supplied baseline table
+   overlaps with the evaluation period, and switching to March instead.
 6. **A sensitivity check** against each measure's alternative definition.
 7. **Reproducible validation tests** (4 pass/fail checks).
 8. **One recommendation** for an Operations stakeholder, plus assumptions,
    limitations, and uncertainty.
 
-See `INVESTIGATION.md` for the narrative of how the above was arrived at,
-not just the polished result.
+`REPORT.md` has the short version. `notebooks/analysis.ipynb` shows the
+actual process — what was checked, in what order, and why each next step
+followed from the last.
