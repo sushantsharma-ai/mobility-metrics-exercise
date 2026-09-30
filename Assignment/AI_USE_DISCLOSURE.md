@@ -37,8 +37,10 @@ estimated from description — including:
   hand-edited or fabricated.
 - File integrity was verified against `CHECKSUMS.sha256` via `shasum -a 256`
   before any analysis began.
-- All four validation tests in `sql/07_validation_tests.sql` were run and
-  confirmed `PASS` (not merely written) before being reported as such.
+- All validation checks (now in `sql/01_cleaning_and_checks.sql` and
+  `sql/02_analysis.sql`, consolidated from a larger set of files in an
+  earlier pass — see below) were run and confirmed to pass, not merely
+  written, before being reported as such.
 
 ## Where AI-generated narrative was corrected against real output
 
@@ -152,3 +154,68 @@ load-bearing. The notebook was rewritten again on that basis:
 The underlying `sql/*.sql` files and every number/conclusion are unchanged
 from the previous pass — this was a presentation and tooling change, not a
 re-analysis.
+
+## Third pass: fewer files, plain prose, and two more caught errors
+
+The user's feedback this time was more direct: the output still read as
+too detailed and too polished to be believable as human work, the eight
+separate SQL files called from the notebook were confusing rather than
+clarifying, and the write-up should be plain sentences, not markdown
+tables or quoted phrases. The response was a real restructuring, not a
+rewording:
+
+- The eight SQL files were consolidated into two: `sql/01_cleaning_and_checks.sql`
+  (attach the source, fold in the incremental delivery, build the trusted
+  trip set, and check that all of it worked) and `sql/02_analysis.sql`
+  (dashboard reconciliation, the canonical metrics, the baseline
+  comparison, and the sensitivity check). The underlying query logic was
+  preserved from the validated originals wherever possible, copied over
+  rather than rewritten from scratch, specifically to avoid introducing new
+  bugs during the consolidation.
+- `REPORT.md` and the previous `INVESTIGATION.md` were merged into a single
+  `INVESTIGATION.md`, written in plain paragraphs with no markdown tables
+  and no quoted phrases, at the user's specific request.
+- The notebook was cut down to two things: run each SQL file, print what it
+  returns. All narrative and reasoning now lives only in `INVESTIGATION.md`;
+  the notebook's job is just to be the receipt showing the queries actually
+  run and returned what the write-up says they returned.
+- A separate document, kept outside the git repository at the user's
+  request since it is for their own use rather than part of the
+  submission, walks through the investigation step by step in a form meant
+  to help them explain the work in an interview.
+
+While consolidating the SQL, re-running every query directly (rather than
+trusting the numbers already written down) turned up two more cases of the
+same problem seen in the previous two passes: prose that was never checked
+against its own query's actual output.
+
+First, every version of this project, going back to the very first one,
+stated that 139 incremental rows were late arrivals predating April 14.
+Re-running that exact query turned up 125, not 139. Checking the very
+first notebook ever produced, its own executed cell output also
+already said 125 — the 139 in the narrative was wrong from the start and
+was never caught in two later revision passes, including one that
+specifically re-verified numbers against outputs. It was finally caught
+here only because rewriting the SQL from the ground up forced every figure
+to be re-derived rather than copied forward again.
+
+Second, and more substantive: the check used to argue that
+`historical_baseline`'s April figures leak from the same period being
+evaluated compared the baseline's per-day average (495.75 trips) against
+what the narrative called "the one Monday actually measured (517)" — but
+the code actually printed 1528, the sum across three separate April
+Mondays in the data, not a single day's count. The 517 in the sentence was
+a real, correct number for one specific date (April 7), but it was never
+what the executed cell displayed, so the comparison as originally written
+didn't hold up to scrutiny. Investigating properly: there are three April
+Mondays in the data (517, 510, and 501 trips), averaging 509, which is
+within about three percent of the baseline's 495.75 — a real match, and if
+anything a stronger case for the leakage finding than the original,
+inconsistent version. `sql/02_analysis.sql` and `INVESTIGATION.md` now
+use that corrected, honest comparison.
+
+Neither error changes any conclusion or the recommendation. Both are left
+here rather than silently fixed, for the same reason as every other
+correction in this document: the point of re-deriving a number is to
+catch exactly this kind of drift, and hiding it after finding it would
+defeat that point.
